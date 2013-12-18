@@ -1,0 +1,239 @@
+hscp  v.0.9.21  2011-03-25  by F.Mizutani,RCCS
+
+What is hscp
+  HSCP (Hybrid scp) is developed to transmit the large size file at high speed on the 
+  long distance and wideband infrastructure.  It has achieved the fast transfer by 
+  changing the file transf -r part of scp into the UDP.
+
+Feature
+  * A basic communication uses the ssl connection secured by ssh.
+  * UDP (non-encrypted) is used for the data communication.
+    Therefore, it is suitable for forwarding that doesn't need hiding secretly in data.
+  * High speed is obtained by not encrypting, and using the protocol of the UDP base 
+    with a little influence of RTT.
+  * It corresponds to some platform (see Platform).
+  * The kernel modification and the system tuning is unnecessary.
+    The performance is obtained because of the setting of the program parameter.
+  * It is possible to use it as it is only by the binary program.
+    It only puts it on use as the server /usr/local/bin.
+  * It is also possible that the authentication method uses rsh instead of ssh. Please 
+    select it when using it in the site.
+  * The function is added based on scp of OpenSSH. cf. http://www.openssh.com/index.html
+  * HSCP is using UDT for the UDP. cf. http://udt.sourceforge.net/index.html
+  * Please refer to Performance for the forwarding result.
+
+Platform
+  The build or the operation verification is settled with the following environments now.
+
+  * AIX5.3　     There is an example of the trouble for AIX-AIX, when large size file 
+                 transmission. (Ajusted) 
+  * SunOS 5.10   The server operation is not confirmed, yet. (Ajusted) 
+  * Linux x86_64 It has been confirmed in AMD system, too.
+  * Linux x86_32 There are a transfer results of over 2GB file. 
+  * Linux IA64   It has confirmed in SGI Altix4700, Fujitsu PRIMEQUEST.
+  * Cygwin1.7.5  It doesn't check in the previous version (Ajusted')
+  * MacOSX　     High speed transfer is not confirmed. (There are results of 500Mbps)
+                 (Ajusted) 
+
+  (Ajusted)  : We had to decrease UDPRecvBufSize in hscp.conf (ex.768000) .
+  (Ajusted') : We had to increase UDPSendBufSize in hscp.conf (ex.12288000) .
+
+Archive
+ Each archive has binary program.
+ If you don't want to build, please read 'How to install' next.
+
+How to build
+1. The build is done with the static link excluding a standard library.
+   The dependence libraries are openssh-5.6p1, and udt4.7ap.
+   Udt4.7ap is a special library for hscp that adds the correction to original udt4.7a.
+   Udt4.7ap is modified udt.h, core.h, core.cpp, and ccc.cpp in src.
+   It is necessary to do the build with os=UNIX for SunOS.
+2. Create directory for hscp.
+3. Store hscp-x.x.x.tar, openssh-5.6p1.tar.gz, and udt.sdk.4.7a.tar.gz in it.
+   Exract udt.sdk.4.7a.tar.gz. And use patch file udt4.7a-hscp.patch.
+   $ patch -p0 < udt4.7a-hscp.patch
+4. Execute ”make libudt.a" in udt4p/rc. (or "gmake libudt.a").
+   for AIX and Cygwin, mask pthread_join() in cleanup() at api.cpp.
+5. Execute "./configure" and "make" in openssh-5.6p1.
+   -lz is not found:  yum install zlib-devel.x86_64 (or ia32)
+   -lcrypto is not found:  yum install openssl-devel.x86_64 (or ia32)
+6. Execute "make" in hscp directory. (or "gmake").
+   When the error goes out by the signal function, two lines are added to 
+   openssh-5.5p1/openbsd-compat/bsd-misc.h.
+     /* wrapper for signal interface */
+     #ifndef __cplusplus /* this line */
+     typedef void (*mysig_t)(int);
+     mysig_t mysignal(int sig, mysig_t act);
+     #endif /* this line */
+   MacOSX,AIX are different add point like this.
+     /* wrapper for signal interface */
+     #ifndef __cplusplus
+     typedef void (*mysig_t)(int);
+     mysig_t mysignal(int sig, mysig_t act);
+
+     #define signal(a,b) mysignal(a,b)
+     #endif
+7. Successful build version for openssh, 5.1p1, 5.2p1, 5.3p1, 5.4p1, 5.5p1, 5.6p1, 5.7p1, 5.8p1.
+8. Successful build version for UDT, 4.4p, 4.5p, 4.6p, 4.7ap, 4.8a.  4.7ap has trouble.
+
+How to install
+  For use both the server and the client
+    1. HSCP is put on /usr/local/bin (It is necessary to set path).
+    2. File mode and owner of HSCP are changed as well as scp.
+    3. "hscp.conf" is preserved in /usr/local/etc.
+    4. File mode of "hscp.conf" is set 644 and owner is set to equally to scp.
+
+  For only use the client （when you install it in the system）
+    1. Installs them as well as 1-4 on.
+    2. "ServerAccept" parameter of "hscp.conf" is set 0 or mask.
+
+  For only use the client （When it is not possible to install it in the system）
+    1. PATH is passed by arranging HSCP suitably ($HOME/bin etc.).
+    2. "hscp.conf" is put on $HOME/etc.
+       If "hscp.conf" is not found or that cannot start HSCP from sshd, it doesn't start
+       as a server.
+       Definition file "hscp.conf" gives priority and reads $HOME/etc.
+
+How to setup
+  Setup for client
+    * Set the following values of "hscp.conf" appropriately.
+    * Please set it with "SshPath" parameter when path is not "/usr/bin/ssh" of ssh
+      (nether error).
+        /usr/bin/ssh: No such file or directory
+    * Please set it with "RshPath" parameter when path is not "/usr/bin/rsh" of rsh
+      (nether error).
+        /usr/bin/rsh: No such file or directory
+    * When the error below is displayed when executing it, it is necessary to set 
+      "UDPRecvBufSize" paramter small.
+        connect: Connection setup failure: unable to create/configure UDP socket: 
+        No buffer space available.
+      However, it leads to deterioration in the transmission rate if the buffer is small.
+      The reference value is equivalent with size ( MaxPktSize(1500) * 8192 = 12288000 )
+      of the buffer of UDT.
+      There is an example that cannot be used so far if it doesn't drop to about 768000
+      with AIX, SunOS, and MacOSX.
+    * Client port number is assigned automatic.
+      If you want to fix to range, please set bellow parameters.
+      UDPClientStartPort: The first number of UDP port that stands by client
+      UDPClientEndPort:   The last number of UDP port that stands by client
+      The maximum range is limited to 256.
+
+  Setup for server
+    * Set the following parameters of "/usr/local/etc/hscp.conf" appropriately.
+      UDPStartPort: The first number of UDP port that stands by server
+      UDPEndPort:   The last number of UDP port that stands by server
+      18001-18032 is set in default. The maximum range is limited to 256.
+    * Firewall should be able to be passed UDP port within the range of the above-
+      mentioned and the setting.
+    * Not only the machine but also that when operating it on the site is necessary for 
+      setting firewall.
+
+  Setup for both
+    * SshVerbose          off:0 on:1  default is 0
+    * SshQuiet            off:0 on:1  default is 1
+    * StalledBoundary     default 0 byte/sec
+    * StalledContinuously default 10 sec
+
+
+How to use
+  A basic usage is the same as scp.
+  The usages other than a simple local<->remote forwarding are not verified.
+  The switch enhanced from scp is as follows.
+
+  -R　　　It executes it with Rsh instead of ssh.
+  -I 1　　The display (Information) mode is set by the numerical value of 1-3.
+    default same as scp 
+    1     The display of the transmission rate etc. changes line and is displayed 
+          every second. 
+    2     The same display as mode1 is displayed without changing line. 
+    3     When the transmission ends, only the result of the transmission rate etc. 
+          is displayed. 
+  Useful scp switch is as follows.
+  -l 1000 Limit of upper transfer rate. (kbit/s)  Example means 1Mbps
+          Supported prefix.  ex. 500M 0.5G  Examples mean 500Mbps
+  -6      Use IPv6 to connect.
+  -U      Display transfer size without prefix (ex. MB -> Byte)
+  SCP Optional switch of operation check ending.
+  -l, -6, -r
+
+Note
+  HSCP doesn't support to send from remote to remote.
+
+License
+  Copyright (c) 2009,2010 Fumiyasu Mizutani, Fumitsuna Teshima, Masataka Sawa, 
+  Kensuke Iwahashi, Takakazu Nagaya, Shigeki Naitoh, Jun-ichi Matsuo All rights reserved.
+ 
+Redistribution and use in source and binary forms, with or without modification, are 
+permitted provided that the following conditions are met:
+
+  * Redistributions of source code must retain the above copyright notice, this list of
+    conditions and the following disclaimer.
+  * Redistributions in binary form must reproduce the above copyright notice, this 
+    list of conditions and the following disclaimer in the documentation and/or other 
+    materials provided with the distribution.
+  * Neither the name of the "NINS (National Institutes of Natural Sciences), 
+    IMS (Institute for Molecular Science)" nor the names of its contributors may be used
+    to endorse or promote products derived from this software without specific prior 
+    written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND ANY 
+EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL 
+THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, 
+SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT 
+OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, 
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
+SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+FAQ
+  Q1. Why is there a range in UDP port?
+  A1. Each client is secured looking for UDP port of becoming empty to correspond to the 
+      demand of two or more clients at the same time with UDP. The number of ranges 
+      relates closely to the maximum connections, simultaneous connected number. 
+      The number of maximum ranges is 128. Port used is selected from the range at random.
+      UDP port is not used, except when communicating.
+  Q2. It is not possible to connect it because of the following errors
+        connect: Connection setup failure: connection time out. UDT couldn't connecti
+        to xxx.xxx.xxx.xxx.
+  A2. UDP has not reached the server from the client. Especially, the environment of 
+      which a set port of UDP can go out freely is necessary in case of the communication
+      between the organizations. It is not possible to use it to communicate for outside
+      the site when limited though there is no problem even if limited to the 
+      communication for in the site if it is Statefull Firewall. It is likely to be cut
+      with firewall on the computer that uses it.
+  Q3. It is not possible to execute it because of the following errors (Linux)
+    hscp: error while loading shared libraries: requires glibc 2.5 or later dynamic linker
+  A3. Shared library in your linux environment is old.  Please rebuild hscp.
+  Q4. Can you use it even in the NAT environment?
+  A4. The NAT environment has the communication results. However, because the effect of 
+      hscp lowers in the environment that causes the transmission rate deterioration, 
+      we will recommend connecting directly.
+  Q5. It didn't become fast...
+  A5. There are some causes of limiting the speed. If each one of a lot of causes is not 
+      evaded, it doesn't bring it close to 1Gbps. The hint of speed-up was listed here, 
+      please challenge the high speed.
+  Q6. It is not possible to use wild card.  It was displayed 'No match'.
+  A6. Some OS needs escape character.  Please try to enter like '\*'.
+
+People
+  HSCP is developing by Technical staff of NINS IMS.
+  It develops as RCCS service
+ 
+  Members,
+    section chief　Fumiyasu Mizutani (contact: mizutani(at)ims.ac.jp)
+    unit 1　Fumitsuna Teshima, Masataka Sawa 
+    unit 2　Kensuke Iwahashi, Takakazu Nagaya 
+    unit 3　Shigeki Naitoh, Jun-ichi Matsuo
+ 
+  Special thanks
+    We wish to express my gratitude for RCCS helped when this program was developed.
+    We thanks for Hironori Kogawa (Hitachi and Ltd.) that did the improvement that uses 
+    UDT for scp.
+    We are thankful to the developers of OpenSSH and UDT that is the base of hscp.
+    And, We are thankful to all open source developers.
+
+  Acknowledge
+    We acknowledge many users.
+    Sergey Cherepanov gives a lot of reports and comments always.
+

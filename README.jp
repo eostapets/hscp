@@ -1,0 +1,309 @@
+hscp  v.0.9.21  2011-03-25  by F.Mizutani.RCCS
+
+Homepage
+ Please refer english document.
+  https://ccportal.ims.ac.jp/software/hscp
+  http://sourceforge.net/projects/hscp/files/README.en/download
+
+What is hscp
+ 遠距離広帯域インフラ上で大容量ファイルの高速転送をめざして開発しています.
+ scp のファイル転送部分を UDP 通信に変えることで高速転送を実現しています.
+ hscp は high speed copy を意識しています. 本当は hybrid scp という噂があります.
+
+Feature
+ 基本的な通信は ssh によって確保された ssl コネクションを使います. 
+ サイト間通信で認証等のセキュリティを確保していると言えます.
+ データ通信に UDP を使います. データ自身にそれほど秘匿性を追求しない転送に向いています.
+ 暗号化しないこと、RTT に影響が少ない UDP を使うことで高速性が得られます.
+ 幅広いシステムに対応しています.
+ カーネルを操作したり、システムチューニングは不要です.
+ バイナリプログラムを用意するだけで使用できます.
+ ssh の代わりに rsh を使うことも可能です. サイト内で使用している場合に選択ください.
+ OpenSSH の scp をベースに機能を追加しています. cf. http://www.openssh.com/index.html 
+ UDP 通信には UDT を使用しています. cf. http://udt.sourceforge.net/index.html
+ UDT では帯域制御が実装されており、排他的・独占的に帯域を使い切ることはありません.
+
+Platform
+ 現在以下の環境でビルドまたは動作検証が済んでいます.
+  AIX5.3       サーバ、クライアントともに検証済み　ただし異種OSとの通信のみ
+               AIX-AIX の場合なぜか途中で通信が止まります.
+  SunOS 5.10   サーバ検証は行っていません(インストールできる環境がありません)
+  Linux x86_64 AMDでも検証済み
+  Linux x86_32 2GB 超えファイルも対応しています
+  Linux IA64   SGI Altix4700, Fujitsu PRIMEQUEST で検証済み
+  Cygwin1.7.5  これ以前のバージョンは検証していません 
+  MacOSX       高速性については未検証
+
+Archive
+ 各 Platform 用アーカイブにはビルド済みバイナリを含んでいます.
+ ビルドしなければ次に How to install をお読み下さい.
+
+How to build
+ 0. 標準的な OS 環境に存在しないライブラリ等は static link することを前提とします.
+    ビルド実績のある依存ライブラリは openssh-5.6p1, udt4.7ap です.
+    udt4.7ap は udt4.7a に修正を加えた hscp 向けの独自ライブラリです.
+      udt4.7ap は src 配下の udt.h, core.h, core.cpp, ccc.cpp を改変しています.
+      SunOS の場合は os = UNIX でビルドする必要があります.
+ 1. hscp ディレクトリを作成
+ 2. その下に hscp-x.x.x.tar, openssh-5.6p1.tar.gz, udt.sdk.4.7a.tar.gz を展開しておく.
+ 3. udt4 に udt4.7a-hscp.patch をあてる
+    $ patch -p0 < udt4.7a-hscp.patch
+    udt4/src の下で make libudt.a を実行 (gmake を使わなければならない場合もあり）
+    AIX, Cygwin の場合は api.cpp 中の cleanup() で pthread_join() をマスクする必要あり
+ 4. openssh の下で ./configure 実行後 make を実行
+    -lz      が無い場合は yum install zlib-devel.x86_64 (or ia32)
+    -lcrypto が無い場合は yum install openssl-devel.x86_64 (or ia32)
+ 5. hscp の下で make を実行 (make でエラーとなる場合は gmake を使う）
+    signal 関数でエラーが出る場合は openssh-5.6p1/openbsd-compat/bsd-misc.h に２行追加
+      /* wrapper for signal interface */
+      #ifndef __cplusplus  /* this line */
+      typedef void (*mysig_t)(int);
+      mysig_t mysignal(int sig, mysig_t act);
+      #endif  /* this line */
+    MacOSX, AIX では以下の場所に追加します.
+      /* wrapper for signal interface */
+      #ifndef __cplusplus
+      typedef void (*mysig_t)(int);
+      mysig_t mysignal(int sig, mysig_t act);
+
+      #define signal(a,b) mysignal(a,b)
+      #endif
+ 6. openssh は 5.1p1, 5.2p1, 5.3p1, 5.4p1, 5.5p1, 5.6p1, 5.7p1, 5.8p1 でビルド実績あり
+ 7. UDT は 4.4p, 4.5p, 4.6p, 4.7ap, 4.8a でビルド実績あり  4.7apは不具合あり
+
+How to install
+ サーバとクライアントの両方を使いたい場合（システムにインストールする場合）
+  1. hscp を /usr/local/bin に(path が設定されている必要があります)
+  2. hscp の file mode, owner を scp と同様に変更
+  3. hscp.conf を /usr/local/etc に保存
+  4. hscp.conf の file mode を 644 に、owner は scp と同等に。
+  Makefile の install 内容で問題なければ sudo make install でも可
+ サーバとクライアントの両方を使いたい場合（システムにインストールできない場合）
+  1. hscp を適当($HOME/bin など)に配置し PATH を通しておく
+  2. hscp.conf を $HOME/etc におく
+  3. 環境変数 HSCP_CONF に $HOME/etc/hscp.conf を定義する
+  定義ファイル hscp.conf は、HSCP_CONF の設定を優先して読みます.
+ クライアントとしてだけ使いたい場合
+  hscp.conf の ServerAccept をマスク or 0 を設定します
+
+ クライアントのための設定
+  hscp.conf の以下の値を適切に設定すること.
+  ssh をパス自動参照以外のものを使いたい場合は SshPath で設定してください.
+  rsh をパス自動参照以外のものを使いたい場合は RshPath で設定してください.
+  実行時に下のエラーが表示される場合は UDPRecvBufSize を小さめに設定する必要があります.
+   connect: Connection setup failure: unable to create/configure UDP socket:
+            No buffer space available.
+   ただしバッファが小さければ通信速度の劣化につながります. 
+   標準値は UDT のバッファサイズ( MaxPktSize(1500) * 8192 = 12288000 )と同値です
+   SunOS, AIX, MacOSX で 768000 を設定しないと動作しなかった実績があります.
+  Cygwin では UDPSendBufSize を 12288000 と設定しないと性能がでないようです
+  UDPClientStartPort  クライアントが使用する UDP port の最初の番号 
+  UDPClientEndPort    クライアントが使用する UDP port の最後の番号 
+   デフォルトはシステムが自動的に割り当てます.
+   もし Firewall 等で、限定したポート範囲しか使えない場合に設定して下さい.
+   最大の範囲は 256 までに制限しています.
+
+ サーバとして運用する場合
+  hscp.conf の以下の値を適切に設定すること
+  UDPStartPort  サーバが待機する UDP port の最初の番号 
+  UDPEndPort    サーバが待機する UDP port の最後の番号 
+   デフォルトでは 18001 - 18032 を設定しています.
+   最大の範囲は 256 までに制限しています.
+  UDTMaxBandWidth (Byte) 送信する最大帯域を設定するときに指定します
+  Firewall に上記設定範囲の UDP port を通過できるようにしておくこと。 
+  Firewall の設定はマシンだけでなく、サイトで運用している場合はそちらも必要。
+
+ サーバ・クライアント両方に有効
+  SshVerbose          verbose mode 時に ssh 自身の出力を抑制  off:0 on:1 default 0
+  SshQuiet            ssh -q と同等です                       off:0 on:1 default 1
+  StalledBoundary     継続して転送速度が設定値以下の時カウントダウン default 0 byte/sec
+  StalledContinuously 継続して設定値秒連続した場合に異常終了させる   default 10 sec
+
+How to use
+ 使い方は、scp と同じです.
+ 単純な local<->remote 転送以外の使い方は検証していません.
+ scp から拡張したスイッチは以下のとおりです.
+  -R      ssh の代わりに rsh で実行します  この場合 -v は使えません
+　-I 1    1-3 の数値で表示モードを設定します
+          default  scp と同等の表示
+          1        1秒毎の通信速度等の表示を改行して表示します
+          2        上と同じ表示を改行せずに表示します
+          3        通信終了時に通信速度等の結果のみ表示します
+ 便利なスイッチは以下のとおりです. 
+  -l 1000 送信速度の上限値を kbit/s で指定します　例では 1Mbps  (0.9.12以降)
+     パラメータにSI接頭語 k,M,G が使用できます  ex. 500M 0.5G　この例では 500Mbps
+  -6      IPv6 で通信します  (0.9.16以降)
+  -U      転送ファイルサイズ表示をSI接頭語無しで表示します.  ex. MB -> Byte (0.9.18以降)
+ 実行確認出来ている scp スイッチは以下のとおりです
+  -l, -6, -r
+
+Note
+ HSCP ではリモートからリモートへの転送は対応していません
+
+License
+ OpenSSH が free、UDT が BSD license を採用していることを考慮し、BSD license の元で公開
+ することにします. 本ライセンス文は以下のテンプレートを使用しています.
+ http://sourceforge.jp/projects/opensource/wiki/licenses%2Fnew_BSD_license
+
+ -----
+ Copyright (c) 2009,2010 Fumiyasu Mizutani, Fumitsuna Teshima, Masataka Sawa,
+ Kensuke Iwahashi, Takakazu Nagaya, Shigeki Naitoh, Jun-ichi Matsuo
+ All rights reserved.
+
+ ソースコード形式かバイナリ形式か、変更するかしないかを問わず、以下の条件を満たす場合に
+ 限り、再頒布および使用が許可されます。
+
+   * ソースコードを再頒布する場合、上記の著作権表示、本条件一覧、および下記免責条項を含
+     めること。
+   * バイナリ形式で再頒布する場合、頒布物に付属のドキュメント等の資料に、上記の著作権表
+     示、本条件一覧、および下記免責条項を含めること。
+   * 書面による特別の許可なしに、本ソフトウェアから派生した製品の宣伝または販売促進に、
+     自然科学研究機構 分子科学研究所の名前を使用してはならない。 
+
+ 本ソフトウェアは、著作権者によって「現状のまま」提供されており、明示黙示を問わず、商業
+ 的な使用可能性、および特定の目的に対する適合性に関する暗黙の保証も含め、またそれに限定
+ されない、いかなる保証もありません。著作権者も著作権者所属組織も、事由のいかんを問わず、
+ 損害発生の原因いかんを問わず、かつ責任の根拠が契約であるか厳格責任であるか（過失その他
+ の）不法行為であるかを問わず、仮にそのような損害が発生する可能性を知らされていたとして
+ も、本ソフトウェアの使用によって発生した（代替品または代用サービスの調達、使用の喪失、
+ データの喪失、利益の喪失、業務の中断も含め、またそれに限定されない）直接損害、間接損害、
+ 偶発的な損害、特別損害、懲罰的損害、または結果損害について、一切責任を負わないものとし
+ ます。 
+ -----
+
+FAQ
+ Q1.なぜ UDP port に範囲があるのか
+ A1.コネクションレスの UDP で同時に複数クライアントの要求に対応するため空きの UDP port
+    を探してクライアント毎の占有通信に確保します.
+    範囲数は最大同時接続数と密接に関係します. 最大範囲数は 128 です.
+    使用する port は、範囲内よりランダムに選択します.
+    通信時以外は UDP port は使われません.
+ Q2.以下のエラーで接続できません
+    connect: Connection setup failure: connection time out.
+    UDT couldn't connect to xxx.xxx.xxx.xxx.
+ A2.クライアント側から UDP がサーバに到達していません.
+    特にサイト間の場合、UDP の設定ポートが自由に出て行ける環境が必要です.
+    Statefull な Firewall であればサイト内向け通信に制限がかけられていても問題ありませんが
+　　サイト外向け通信に制限がかけられている場合は使用できません.
+    場合によって使用しているコンピュータ上の firewall でもカットされている場合があります.
+ Q3.以下のエラーで実行できません. (Linux)
+    hscp: error while loading shared libraries: requires glibc 2.5 or later dynamic linker
+ A3.シェアードライブラリのバージョンが古い様です.
+    x86_64 環境であれば、以前の環境でビルドしたもの(2.4)があります. そちらでお試し下さい.
+ Q4.NAT 環境でも使用できますか
+ A4.NAT 環境でも通信実績があります.
+    ただ通信速度劣化を起こす環境では hscp の効果は低くなるので、直接接続をおすすめします.
+ Q5.あまり早くならないのですが
+ A5.速度を制限する原因はいくつかあります. どの原因で劣化しているのかを見極めて、それを回
+    避するための工夫をしなければなかなか1Gbpsには迫れないです. その辺のヒントをまとめま
+    したので、そちら(Technical note B.)を参照して速度改善に挑戦してください.
+ Q6.ワイルドカードを使うと No match がいきなり表示されます.
+ A6.OS によってエスケープする必要があるようです. \* の様に指定してください.
+
+People
+ このプログラムは、文部科学省 大学共同利用機関法人 自然科学研究機構 分子科学研究所
+ 技術課 計算科学技術班の技術職員で開発しています. 
+ 同 岡崎共通研究施設 計算科学研究センターで行っている全国共同利用サービスの一環として
+ 開発を行っています.
+ メンバーは以下のとおりです.
+  section chief  Fumiyasu Mizutani
+  unit 1         Fumitsuna Teshima, Masataka Sawa
+  unit 2         Kensuke Iwahashi, Takakazu Nagaya
+  unit 3         Shigeki Naitoh, Jun-ichi Matsuo
+
+Special thanks
+ このプログラムの開発にあたり援助頂いた計算科学研究センターに感謝いたします.
+ scp に UDT を使う改良を行った Hironori Kogawa (Hitachi, Ltd.) に感謝いたします.
+ hscp のベースとなっている OpenSSH および UDT の提供者に感謝いたします.
+ そしてすべてのオープンソース開発者にも感謝いたします.
+
+Future
+ UDT に変わる UDP 通信モジュールの独自開発を目指しています.
+ 現在 Windows 用の PuTTY の PSCP を HSCP 化するべく対応中(動作するものが出来ています).
+ 将来的には Windows 用の WinSCP を HSCP する方向で検討中です.
+
+Technical note
+
+A.Mechanism
+ 1. hscp クライアントを起動すると ssh (or rsh, 以降省略) を起動します.
+ 2. ssh はサーバ側の sshd に接続します.
+ 3. ssh (client) - sshed (server) で認証を行います.
+ 4. sshed (server) はローカルの hscp を起動して hscp (client) との pipe をつなげます.
+ 5. hscp (server) は設定された UDP port range から使えるポートをランダムに探します.
+ 6. hscp (server) は pipe 経由で UDP port number を hscp (client) に通知します.
+ 7. hscp (client) は UDP で hscp (server) に通信を試みます.
+    これにより UDP の client-server 通信が firewall の stateful 管理に登録されます.
+ 8. ファイル毎に UDP でまず転送バイト数を送った後にファイル内容を送ります.
+ 9. 転送後に pipe を使って、filename, date 等のファイル情報を渡します.
+    ファイルの数だけ 8, 9 を繰り返します.
+
+B.Way to high speed (near 1Gbps or over 1Gbps) transfer
+ キャッシュ効果が期待できないメモリ容量以上サイズのファイル転送で GbE を使っていながら
+ 1/10 程度の速度しか出ない場合、high speed をめざすためのヒントにしてください.
+ 1. CPU speed
+  1a. ssh 環境は ssl による暗号・解読ともにかなり CPU に負荷がかかります.
+      scp の通信速度が低い場合 top を同時に実行して負荷を確認すると 90% 近くの場合があり
+      この様な状況であればデータ通信を暗号しない hscp に変えることでかなり速度向上します.
+  1b. hscp を使っても速度が出ず、top で負荷を確認して 100% 近い状況であれば、CPU 能力等
+      ハードの限界である可能性が高いと思われます.
+  1c. 10GbE を使ってもなかなか10Gbpsはでません. 結構 CPU 律速になっている状況です.
+      メモリバンド幅は十分な時代になりましたが、file I/O を行うとまだ速度が出せないです.
+ 2. Disk speed
+  2a. ローカルディスクでディスク単体で使っている場合、速度が出ません.
+      単体ディスクの読み出しは 30-50MB/s 程度です.
+      この状況では hscp を使っても Disk 律速でそれほど速度改善になりません.
+      数本ディスクで RAID 等の分散I/Oにより速度を 125MB/s 以上を確保する必要があります.
+      分散I/Oしていても速度がでないファイルシステムはたくさんあります. ベンチマークを
+      キャッシュがきかないサイズで行って実測しておくと良いでしょう.
+  2b. NFS のボリュームも速度はでません. やはりディスク律速になります.
+  2c. Download時に転送先を /dev/null で試して通信速度が大幅に変わる様であれば、書き込み
+      側ディスク律速で速度劣化していると言えます.
+ 3. Network speed
+  3a. ftp など非暗号通信でも 10MB/s 未満の場合は、途中経路で 100Mbps で制限された箇所が
+      あるか調査が必要だと思われます. 
+  3b. 安価な HUB に接続しているだけで 1Gbps の速度が出ないことがあります.
+      netperf 等のツールを使って 1Gbps の速度が出せる環境か測定してみるのも良い方法です.
+  3c. 当然 network の利用が多ければ速度は出ません. 
+      UDT はパケットロスに弱い傾向があり、混雑していると大きく速度が劣化します.
+      昼夜で速度が大きく異なる場合は、ネットワークの構成を検討する必要があります.
+  3d. hscp で通信させる時に -I 1 をつけて実行させたときに NAK という項目で数十カウント以
+      上が立て続けに表示される環境では、まず速度が出ません. これは何らかの原因で、UDT 通
+      信的にパケットロスが発生していることを意味しています. 上記の混雑しているという状況
+      以外に、夜でもロス状況が変わらない様であれば、途中経路上のネットワーク装置に問題が
+      無いか精査する必要があると思われます.
+  3e. 同時に複数通信を行うと、帯域を取り合って速度が出ない場合があります. センターから岡
+      崎キャンパス内では10GbE化が完了しましたが、SINET3との接続でGbEのチャネリングになっ
+      ているため、最悪1Gbps上に複数本の通信が押し込められることによる通信劣化が観察され
+      ています.
+ 4. Network latency
+  4a. ping 等で調べることができる RTT (round trip time) が大きいと TCP を使った通信は
+      速度が確実に低下します. 遠距離通信では、通常の通信は速度が出ません.
+      これが原因の場合 UDP を使った通信で劇的に速度が改善されることがあります.
+      岡崎から 20msec 程度の九大で 963Mbps の実績があります.
+  4b. RTT が 26msec を越えるあたりから UDT でもデフォルト設定値では速度劣化を起こす様子
+      が遅延シミュレータを介した実験で観察されています. これを回避するには UDP を使った
+      プロトコル自身を見直す必要があると考えています. UDT を使っている現状で、設定値を変
+      えれば改善できるのか、についてはまだ情報を持ち合わせておりません
+ 5. Window size
+  5a. RWIN (Receive Window) を適切に（大抵の場合は現在値より大きく）設定すれば速度の改善
+      が得られる報告があります. この効果は TCP 通信に限った話なので、UDP通信を使っている
+      hscp にはあてはまりません. これと同じ効果は、hscp.conf 内の MaxWinSize や MaxBufSize
+      を変更することで得られると思われます
+ 6. Buffer size
+  6a. UDT ライブラリでは UDT のバッファサイズ、UDP のバッファサイズを変えられる様になっ
+      ています. hscp.conf でそれらを変更することが可能です. あまり小さい値にすると著しい
+      速度劣化が観察されますが、デフォルトで問題になった印象がありません.オプションス
+      イッチ -I 1 を付けて実行したときに AvRcvBfSz(Average Receive Buffer Size) が 0 に
+      なる状況が観察される場合は、ディスクの書き込みが受信速度についていけない状況ですの
+      で、RecvBufSize を増やすことで改善できる可能性があります.
+ 7 Packet size
+  7a. GbEであれば、標準的な設定値で限界まで速度が出せますが、10GbEを使った場合、GbEをご
+      くわずか越える程度でしか速度が出ないようです. この場合、UDT でのパケットサイズ設定
+      を大きくする(ex. 1500 -> 60000)と、数倍程度早くなる傾向が見えています. 今のところ
+      2.5Gbps程度の実績があります. hscp.conf の UDTMaxPktSize を Server-Client 両方で変
+      える必要があります
+
+C.Programing comments
+ C++ で書かれた UDT を、C で書かれた OpenSSH の scp から呼び出すのに苦労してます.
+ OOP 経験が少ないため、ソースは動かすことでいっぱいいっぱいです.
+

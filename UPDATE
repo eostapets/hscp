@@ -1,0 +1,69 @@
+0.9.21-2  2011-03-25  Up to openssh-5.8p1
+0.9.21-1  2011-03-25  Up to UDT 4.8a
+
+0.9.20-4  2010-12-26  Protocol 0, 1 both communication
+0.9.20-3  2010-12-26  Protocol 1 implement
+0.9.20-2  2010-12-25  BUG: stalled check except server
+0.9.20-1  2010-12-25  BUG: sendfile fstream close when file size is zero
+
+0.9.19-5  2010-12-21  Up to UDT 4.7a (this version has trouble...)  -> Down to UDT4.6
+0.9.19-4  2010-12-20  Stalled check except server
+0.9.19-3  2010-12-20  Restore UDT4.6 (not support sendfile/recvfile disk full)
+0.9.19-2  2010-12-20  Stalled recovery for -I 3 mode
+0.9.19-1  2010-12-20  Ssh quiet on in hscp.conf   for not display "Killed by signal x"
+
+0.9.18-5  2010-12-18  Stalled recovery 
+0.9.18-4  2010-12-17  Add -U switch supports not use subunit for size
+0.9.18-3  2010-12-17  UDT sendfile/recvfile disk full recovery
+0.9.18-2  2010-11-04  Default port range 10 -> 32
+0.9.18-1  2010-11-04  BUG: normal exit at listen, accept error.
+
+0.9.17-5  2010-08-23  Up to openssh-5.6p1
+0.9.17-4  2010-06-15  Progress time reset each file
+0.9.17-3  2010-06-14  Ssh verbose off in hscp.conf
+0.9.17-2  2010-06-09  BUG: Progress has trouble to some files transfer
+0.9.17-1  2010-05-28  Progress bufferSize display unsigned->signed
+
+0.9.16-10 2010-05-27  Cygwin support
+0.9.16-9  2010-05-25  BUG: -6 switch
+0.9.16-8  2010-05-23  Up to openssh-5.5p1
+0.9.16-7  2010-05-21  strcpy,strcat to strncpy,strncat
+0.9.16-6  2010-05-19  Add -E switch
+0.9.16-5  2010-05-19  BUG: -R switch
+0.9.16-4  2010-05-19  error out check to remote to remote
+0.9.16-3  2010-05-18  BUG: -R switch
+0.9.16-2  2010-05-14  -l switch parameter supports prefix ex. 500M 0.5G
+0.9.16-1  2010-05-14  IPv6 -6 switch support
+
+0.9.15-3  2010-05-12  not support (mask) to send remote to remote
+0.9.15-2  2010-05-12  support to send multi file toremote
+0.9.15-1  2010-05-09  stderr flush
+
+0.9.14-2  2010-05-07  variable initialize in UDTScp class
+0.9.14-1  2010-05-07  BUG: 0.9.13-2 is taken recursive error
+
+0.9.13-3  2010-04-12  BUG: progress display format
+0.9.13-2  2010-04-09  BUG: error display for write protected place
+0.9.13-1  2010-04-09  BUG: file transfer for size zero
+
+0.9.12-2  2010-03-30  off_t is trouble on 32bit linux
+0.9.12-1  2010-03-16  limit buffer width switch (-l) support
+0.9.12    2010-03-11  Up to openssh-5.4p1
+
+0.9.11-2  2010-02-22  progress bugfix and timing modify 
+0.9.11-1  2010-02-19  HSCP_CONF_DIR (hscp.conf PATH) define
+0.9.11    2010-02-19  Up to openssh-5.3p1
+
+0.9.10    2009-12-25  Up to UDT 4.6
+0.9.9     2009-07-13  Up to UDT 4.5a
+0.9.8     2009-05-23
+0.9.7     2009-05-07
+0.9.6     2009-04-29
+0.9.5     2009-04-28
+0.9.4     2009-04-27
+0.9.3     2009-04-13
+0.9.2     2009-04-05
+0.9.1     2009-04-02
+0.9 -     2009-03-31
+0.2 -     2009-03-30
+0.1 -     2009-03-26

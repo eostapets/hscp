@@ -1,0 +1,56 @@
+# $Id: Makefile,v 1.1 2010/05/09 17:37:09 mizutani Exp mizutani $
+
+SSHSRCDIR=../openssh-5.5p1
+UDTSRCDIR=../udt4/src
+
+#CC=g++
+CC=xlC
+#LD=g++
+LD=xlC
+#CPPFLAGS=-q64 -qcache=auto -I/opt/freeware/include -I./ -I$(SSHSRCDIR) -D_LARGE_FILES 
+CPPFLAGS=-q64 -I. -I$(SSHSRCDIR) -I$(UDTSRCDIR) -I/opt/freeware/include -D_LARGE_FILES
+
+all:
+	$(CC) -q64 -c $(CPPFLAGS) hscp.cpp
+#	$(CC) -c $(CPPFLAGS) -I$(UDTSRCDIR) udtscp.cpp
+#	$(CC) -q64 -qcache=auto -c -I. -I$(UDTSRCDIR) udtscp.cpp
+	$(CC) -q64 -c -I. -I$(UDTSRCDIR) udtscp.cpp
+#	$(LD) -q64 -o hscp hscp.o udtscp.o $(UDTSRCDIR)/libudt.a $(SSHSRCDIR)/progressmeter.o $(SSHSRCDIR)/bufaux.o -L$(SSHSRCDIR) -lssh -L$(SSHSRCDIR)/openbsd-compat -lopenbsd-compat -lpthread 
+#	$(LD) -q64 -o hscp $(UDTSRCDIR)/libudt.a hscp.o udtscp.o $(SSHSRCDIR)/progressmeter.o $(SSHSRCDIR)/bufaux.o -L$(SSHSRCDIR) -lssh -L$(SSHSRCDIR)/openbsd-compat -lopenbsd-compat -L$(UDTSRCDIR) -ludt -lpthread 
+	$(LD) -q64 -o hscp hscp.o udtscp.o $(SSHSRCDIR)/progressmeter.o $(SSHSRCDIR)/bufaux.o -L$(SSHSRCDIR) -lssh -L$(SSHSRCDIR)/openbsd-compat -lopenbsd-compat -L$(UDTSRCDIR) -ludt -lpthread 
+#	$(LD) -q64 -o hscp hscp.o udtscp.o $(SSHSRCDIR)/progressmeter.o $(SSHSRCDIR)/bufaux.o -L$(SSHSRCDIR) -lssh -L$(SSHSRCDIR)/openbsd-compat -lopenbsd-compat -L$(UDTSRCDIR) -ludt -lpthread 
+
+hscp.o: hscp.c hscp.h 
+	$(CC) -q64 -c $(CPPFLAGS) hscp.c
+
+udtscp.o: udtscp.c udtscp.h
+	$(CC) -q64 -c $(CPPFLAGS) -I$(UDTSRCDIR) udtscp.c
+
+hscp: hscp.o udtscp.o
+	$(LD) -q64 -o $@ $(UDTSRCDIR)/libudt.a hscp.o udtscp.o $(SSHSRCDIR)/progressmeter.o $(SSHSRCDIR)/bufaux.o -L$(SSHSRCDIR) -lssh -L$(SSHSRCDIR)/openbsd-compat -lopenbsd-compat -L$(UDTSRCDIR) -ludt -lpthread
+clean:
+	rm -f *.o hscp 
+
+install_bin:
+	cp -p hscp /usr/local/bin
+	chown root:system /usr/local/bin/hscp
+	chmod 755 /usr/local/bin/hscp
+#	cp -p hscp.conf /etc
+#	chown root:system /etc/hscp.conf
+#	chmod 644 /etc/hscp.conf
+
+install:
+	cp -p hscp /usr/local/bin
+	chown root:system /usr/local/bin/hscp
+	chmod 555 /usr/local/bin/hscp
+	cp -p hscp.conf /etc
+	chown root:system /etc/hscp.conf
+	chmod 644 /etc/hscp.conf
+
+uninstall_local:
+	rm -f /usr/local/openssh/bin/hscp
+	rm -f /etc/hscp.conf
+
+uninstall:
+	rm -f /usr/bin/hscp
+	rm -f /etc/hscp.conf
