@@ -175,6 +175,13 @@ struct CPerfMon
    double mbpsBandwidth;                // estimated bandwidth, in Mb/s
    int byteAvailSndBuf;                 // available UDT sender buffer size
    int byteAvailRcvBuf;                 // available UDT receiver buffer size
+
+   // additional information
+   int64_t byteFileSize;
+   int64_t byteRecvSize;
+   int64_t byteSendSize;
+   double  rateReceived;
+   double  rateSent;
 };
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -44,6 +44,8 @@ written by
 #include <cmath>
 #include <cstring>
 
+#include <string.h>
+
 
 CCC::CCC():
 m_iSYNInterval(CUDT::m_iSYNInterval),

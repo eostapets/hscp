@@ -1219,6 +1219,8 @@ int64_t CUDT::sendfile(fstream& ifs, const int64_t& offset, const int64_t& size,
 
    int64_t tosend = size;
    int unitsize;
+   m_llFileSize = size;
+   m_llSendSize = 0;
 
    // positioning...
    try
@@ -1258,6 +1260,7 @@ int64_t CUDT::sendfile(fstream& ifs, const int64_t& offset, const int64_t& size,
          m_llSndDurationCounter = CTimer::getTime();
 
       tosend -= m_pSndBuffer->addBufferFromFile(ifs, unitsize);
+      m_llSendSize = size - tosend;
 
       // insert this socket to snd list if it is not on the list yet
       m_pSndQueue->m_pSndUList->update(this, false);
@@ -1284,6 +1287,8 @@ int64_t CUDT::recvfile(fstream& ofs, const int64_t& offset, const int64_t& size,
    int64_t torecv = size;
    int unitsize = block;
    int recvsize;
+   m_llFileSize = size;
+   m_llRecvSize = 0;
 
    // positioning...
    try
@@ -1320,6 +1325,7 @@ int64_t CUDT::recvfile(fstream& ofs, const int64_t& offset, const int64_t& size,
       recvsize = m_pRcvBuffer->readBufferToFile(ofs, unitsize);
 
       torecv -= recvsize;
+      m_llRecvSize += recvsize;
    }
 
    return size - torecv;
@@ -1368,6 +1374,12 @@ void CUDT::sample(CPerfMon* perf, bool clear)
    perf->pktFlightSize = CSeqNo::seqlen(const_cast<int32_t&>(m_iSndLastAck), CSeqNo::incseq(m_iSndCurrSeqNo)) - 1;
    perf->msRTT = m_iRTT/1000.0;
    perf->mbpsBandwidth = m_iBandwidth * m_iPayloadSize * 8.0 / 1000000.0;
+
+   perf->byteFileSize = m_llFileSize;
+   perf->byteRecvSize = m_llRecvSize;
+   perf->byteSendSize = m_llSendSize;
+   perf->rateReceived = m_llRecvSize / double(m_llFileSize) * 100;
+   perf->rateSent     = m_llSendSize / double(m_llFileSize) * 100;
 
    #ifndef WIN32
       if (0 == pthread_mutex_trylock(&m_ConnectionLock))

@@ -387,6 +387,10 @@ private: // Trace
    int64_t m_llSndDuration;			// real time for sending
    int64_t m_llSndDurationCounter;		// timers to record the sending duration
 
+   int64_t m_llFileSize;
+   int64_t m_llRecvSize;
+   int64_t m_llSendSize;
+
 private: // Timers
    uint64_t m_ullCPUFrequency;                  // CPU clock frequency, used for Timer
 
