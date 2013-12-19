@@ -24,12 +24,11 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "includes.h"
-
 #include <sys/types.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/param.h>
+#include <sys/time.h>
 
 #include <stdarg.h>
 #include <stdio.h>
@@ -58,6 +57,7 @@
 #include "misc.h"
 #include "log.h"
 #include "ssh.h"
+#include "defines.h"
 
 /* remove newline at end of string */
 char *
@@ -199,31 +199,7 @@ strdelim(char **s)
 	return (old);
 }
 
-struct passwd *
-pwcopy(struct passwd *pw)
-{
-	struct passwd *copy = xcalloc(1, sizeof(*copy));
 
-	copy->pw_name = xstrdup(pw->pw_name);
-	copy->pw_passwd = xstrdup(pw->pw_passwd);
-#ifdef HAVE_STRUCT_PASSWD_PW_GECOS
-	copy->pw_gecos = xstrdup(pw->pw_gecos);
-#endif
-	copy->pw_uid = pw->pw_uid;
-	copy->pw_gid = pw->pw_gid;
-#ifdef HAVE_STRUCT_PASSWD_PW_EXPIRE
-	copy->pw_expire = pw->pw_expire;
-#endif
-#ifdef HAVE_STRUCT_PASSWD_PW_CHANGE
-	copy->pw_change = pw->pw_change;
-#endif
-#ifdef HAVE_STRUCT_PASSWD_PW_CLASS
-	copy->pw_class = xstrdup(pw->pw_class);
-#endif
-	copy->pw_dir = xstrdup(pw->pw_dir);
-	copy->pw_shell = xstrdup(pw->pw_shell);
-	return copy;
-}
 
 /*
  * Convert ASCII string to TCP/IP port number.
@@ -508,51 +484,6 @@ freeargs(arglist *args)
 		args->nalloc = args->num = 0;
 		args->list = NULL;
 	}
-}
-
-/*
- * Expands tildes in the file name.  Returns data allocated by xmalloc.
- * Warning: this calls getpw*.
- */
-char *
-tilde_expand_filename(const char *filename, uid_t uid)
-{
-	const char *path, *sep;
-	char user[128], *ret;
-	struct passwd *pw;
-	u_int len, slash;
-
-	if (*filename != '~')
-		return (xstrdup(filename));
-	filename++;
-
-	path = strchr(filename, '/');
-	if (path != NULL && path > filename) {		/* ~user/path */
-		slash = path - filename;
-		if (slash > sizeof(user) - 1)
-			fatal("tilde_expand_filename: ~username too long");
-		memcpy(user, filename, slash);
-		user[slash] = '\0';
-		if ((pw = getpwnam(user)) == NULL)
-			fatal("tilde_expand_filename: No such user %s", user);
-	} else if ((pw = getpwuid(uid)) == NULL)	/* ~/path */
-		fatal("tilde_expand_filename: No such uid %ld", (long)uid);
-
-	/* Make sure directory has a trailing '/' */
-	len = strlen(pw->pw_dir);
-	if (len == 0 || pw->pw_dir[len - 1] != '/')
-		sep = "/";
-	else
-		sep = "";
-
-	/* Skip leading '/' from specified path */
-	if (path != NULL)
-		filename = path + 1;
-
-	if (xasprintf(&ret, "%s%s%s", pw->pw_dir, sep, filename) >= MAXPATHLEN)
-		fatal("tilde_expand_filename: Path too long");
-
-	return (ret);
 }
 
 /*

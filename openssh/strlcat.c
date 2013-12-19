@@ -18,7 +18,6 @@
 
 /* OPENBSD ORIGINAL: lib/libc/string/strlcat.c */
 
-#include "includes.h"
 #ifndef HAVE_STRLCAT
 
 #include <sys/types.h>

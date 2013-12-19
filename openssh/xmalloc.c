@@ -13,8 +13,6 @@
  * called by a name other than "ssh" or "Secure Shell".
  */
 
-#include "includes.h"
-
 #include <sys/param.h>
 #include <stdarg.h>
 #include <stdio.h>
@@ -23,6 +21,7 @@
 
 #include "xmalloc.h"
 #include "log.h"
+#include "defines.h"
 
 void *
 xmalloc(size_t size)

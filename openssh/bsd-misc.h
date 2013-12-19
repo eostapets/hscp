@@ -19,7 +19,6 @@
 #ifndef _BSD_MISC_H
 #define _BSD_MISC_H
 
-#include "includes.h"
 
 char *ssh_get_progname(char *);
 
@@ -31,21 +30,9 @@ char *ssh_get_progname(char *);
 int setenv(const char *, const char *, int);
 #endif /* !HAVE_SETENV */
 
-#ifndef HAVE_SETLOGIN
-int setlogin(const char *);
-#endif /* !HAVE_SETLOGIN */
-
 #ifndef HAVE_INNETGR
 int innetgr(const char *, const char *, const char *, const char *);
 #endif /* HAVE_INNETGR */
-
-#if !defined(HAVE_SETEUID) && defined(HAVE_SETREUID)
-int seteuid(uid_t);
-#endif /* !defined(HAVE_SETEUID) && defined(HAVE_SETREUID) */
-
-#if !defined(HAVE_SETEGID) && defined(HAVE_SETRESGID)
-int setegid(uid_t);
-#endif /* !defined(HAVE_SETEGID) && defined(HAVE_SETRESGID) */
 
 #if !defined(HAVE_STRERROR) && defined(HAVE_SYS_ERRLIST) && defined(HAVE_SYS_NERR)
 const char *strerror(int);
@@ -53,39 +40,6 @@ const char *strerror(int);
 
 #if !defined(HAVE_SETLINEBUF)
 #define setlinebuf(a)	(setvbuf((a), NULL, _IOLBF, 0))
-#endif
-
-#ifndef HAVE_UTIMES
-#ifndef HAVE_STRUCT_TIMEVAL
-struct timeval {
-	long tv_sec;
-	long tv_usec;
-}
-#endif /* HAVE_STRUCT_TIMEVAL */
-
-int utimes(char *, struct timeval *);
-#endif /* HAVE_UTIMES */
-
-#ifndef HAVE_TRUNCATE
-int truncate (const char *, off_t);
-#endif /* HAVE_TRUNCATE */
-
-#if !defined(HAVE_NANOSLEEP) && !defined(HAVE_NSLEEP)
-#ifndef HAVE_STRUCT_TIMESPEC
-struct timespec {
-	time_t	tv_sec;
-	long	tv_nsec;
-};
-#endif
-int nanosleep(const struct timespec *, struct timespec *);
-#endif
-
-#ifndef HAVE_USLEEP
-int usleep(unsigned int useconds);
-#endif
-
-#ifndef HAVE_TCGETPGRP
-pid_t tcgetpgrp(int);
 #endif
 
 #ifndef HAVE_TCSENDBREAK

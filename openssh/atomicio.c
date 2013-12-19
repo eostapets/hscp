@@ -26,8 +26,8 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "includes.h"
-
+#include "defines.h"
+#include "bsd-poll.h"
 #include <sys/param.h>
 #include <sys/uio.h>
 

@@ -34,8 +34,6 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "includes.h"
-
 #include <sys/types.h>
 
 #include <fcntl.h>
@@ -46,10 +44,8 @@
 #include <syslog.h>
 #include <unistd.h>
 #include <errno.h>
-#if defined(HAVE_STRNVIS) && defined(HAVE_VIS_H) && !defined(BROKEN_STRNVIS)
-# include <vis.h>
-#endif
 
+#include "vis.h"
 #include "xmalloc.h"
 #include "log.h"
 

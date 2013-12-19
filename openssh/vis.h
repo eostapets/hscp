@@ -34,7 +34,6 @@
 
 /* OPENBSD ORIGINAL: include/vis.h */
 
-#include "includes.h"
 #if !defined(HAVE_STRNVIS) || defined(BROKEN_STRNVIS)
 
 #ifndef _VIS_H_
@@ -43,6 +42,7 @@
 #include <sys/types.h>
 #include <limits.h>
 
+#include "defines.h"
 /*
  * to select alternate encoding format
  */
