@@ -4,7 +4,6 @@
 #SSHSRCDIR=../openssh-5.5p1
 #SSHSRCDIR=../openssh-5.6p1
 SSHSRCDIR=../openssh-5.8p1
-UDTSRCDIR=../udt4/src
 
 CC=g++
 LD=g++
@@ -13,7 +12,11 @@ CPPFLAGS=-I$(SSHSRCDIR) -I. -I$(UDTSRCDIR)
 all:
 	$(MAKE) hscp
 
-hscp: hscp.o udtscp.o
+libudt.a:
+	$(MAKE) -C udt4
+	cp udt4/src/libudt.a .
+
+hscp: libudt.a hscp.o udtscp.o
 #	$(LD) -o $@ hscp.o udtscp.o $(UDTSRCDIR)/libudt.a $(SSHSRCDIR)/progressmeter.o $(SSHSRCDIR)/bufaux.o -L$(SSHSRCDIR) -lssh -L$(SSHSRCDIR)/openbsd-compat -lopenbsd-compat -L$(UDTSRCDIR) -ludt -lstdc++ -lpthread
 	$(LD) -o $@ hscp.o udtscp.o $(UDTSRCDIR)/libudt.a $(SSHSRCDIR)/bufaux.o -L$(SSHSRCDIR) -lssh -L$(SSHSRCDIR)/openbsd-compat -lopenbsd-compat -L$(UDTSRCDIR) -ludt -lstdc++ -lpthread
 
@@ -21,7 +24,8 @@ udtscp.o: udtscp.cpp udtscp.h
 	$(CC) -g -c -I$(UDTSRCDIR) udtscp.cpp
 
 clean:
-	rm -f *.o hscp udtscp.o
+	rm -f *.o hscp udtscp.o libudt.a
+	$(MAKE) -C udt4 clean
 
 install_bin:
 	cp -p hscp /usr/local/bin
