@@ -4,4 +4,4 @@ libopenssh.a: atomicio.o bsd-misc.o fatal.o log.o misc.o strlcat.o strlcpy.o str
 	ar -rcs $@ $^
 
 clean:
-	rm *.a *.o
+	rm -f *.a *.o 
