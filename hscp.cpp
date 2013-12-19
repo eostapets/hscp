@@ -121,13 +121,10 @@ using namespace std;
 #include <arpa/inet.h>
 
 extern "C" {
-#include "includes.h"
 
 #include <sys/types.h>
 #include <sys/param.h>
-#ifdef HAVE_SYS_STAT_H
-# include <sys/stat.h>
-#endif
+#include <sys/stat.h>
 #ifdef HAVE_POLL_H
 #include <poll.h>
 #else
@@ -135,9 +132,7 @@ extern "C" {
 #  include <sys/poll.h>
 # endif
 #endif
-#ifdef HAVE_SYS_TIME_H
-# include <sys/time.h>
-#endif
+#include <sys/time.h>
 #include <sys/wait.h>
 #include <sys/uio.h>
 
@@ -164,6 +159,9 @@ extern "C" {
 #include "pathnames.h"
 #include "log.h"
 #include "misc.h"
+#include "bsd-misc.h"
+#include "bsd-poll.h"
+#include "vis.h"
 //#include "progressmeter.h"
 }
 
@@ -811,7 +809,7 @@ toremote(char *targ, int argc, char **argv)
 	}
 
 	if (tuser != NULL && !okname(tuser)) {
-		xfree(arg);
+		free(arg);
 		return;
 	}
 	for (i = 0; i < argc - 1; i++) {
@@ -873,7 +871,7 @@ toremote(char *targ, int argc, char **argv)
 					exit(1);
 				if (response(ftitle) < 0)
 					exit(1);
-				(void) xfree(bp);
+				(void) free(bp);
 
 				udtclient.set_showprogress(showprogress);
 				udtclient.set_show_unit(show_unit);
@@ -923,7 +921,7 @@ toremote(char *targ, int argc, char **argv)
 				  }
 				  if (udtclient.connect(host, (char *)bufport) == 0){
 				    run_err("UDT couldn't connect to %s", host);
-				    xfree(arg);
+				    free(arg);
 				    return;
                                   }
 				  udtconnected = 1;
@@ -936,7 +934,7 @@ toremote(char *targ, int argc, char **argv)
 	if (udt_mode && udtconnected) {
 		udtclient.disconnect();
 	}
-	xfree(arg);
+	free(arg);
 }
 
 void
@@ -980,11 +978,11 @@ tolocal(int argc, char **argv)
 		host = cleanhostname(host);
 		xasprintf(&bp, "%s -f -- %s", cmd, src);
 		if (do_cmd(host, suser, bp, &remin, &remout) < 0) {
-			(void) xfree(bp);
+			(void) free(bp);
 			++errs;
 			continue;
 		}
-		xfree(bp);
+		free(bp);
 
 		UDTScp udtclient;
 		udtclient.set_showprogress(showprogress);
@@ -1471,7 +1469,7 @@ sink(int argc, char **argv, UDTScp& udtscp, int rsw)
 			need = strlen(targ) + strlen(cp) + 250;
 			if (need > cursize) {
 				if (namebuf)
-					xfree(namebuf);
+					free(namebuf);
 				namebuf = (char *)xmalloc(need);
 				cursize = need;
 			}
@@ -1516,7 +1514,7 @@ sink(int argc, char **argv, UDTScp& udtscp, int rsw)
 			if (mod_flag)
 				(void) chmod(vect[0], mode);
 			if (vect[0])
-				xfree(vect[0]);
+				free(vect[0]);
 			continue;
 		}
 		omode = mode;

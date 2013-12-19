@@ -1,13 +1,7 @@
 # $Id: Makefile,v 1.1 2010/05/09 17:37:09 mizutani Exp mizutani $
 
-#SSHSRCDIR=../openssh-5.4p1
-#SSHSRCDIR=../openssh-5.5p1
-#SSHSRCDIR=../openssh-5.6p1
-SSHSRCDIR=../openssh-5.8p1
-
 CC=g++
 LD=g++
-CPPFLAGS=-I$(SSHSRCDIR) -I. -I$(UDTSRCDIR)
 
 all:
 	$(MAKE) hscp
@@ -16,16 +10,23 @@ libudt.a:
 	$(MAKE) -C udt4
 	cp udt4/src/libudt.a .
 
-hscp: libudt.a hscp.o udtscp.o
-#	$(LD) -o $@ hscp.o udtscp.o $(UDTSRCDIR)/libudt.a $(SSHSRCDIR)/progressmeter.o $(SSHSRCDIR)/bufaux.o -L$(SSHSRCDIR) -lssh -L$(SSHSRCDIR)/openbsd-compat -lopenbsd-compat -L$(UDTSRCDIR) -ludt -lstdc++ -lpthread
-	$(LD) -o $@ hscp.o udtscp.o $(UDTSRCDIR)/libudt.a $(SSHSRCDIR)/bufaux.o -L$(SSHSRCDIR) -lssh -L$(SSHSRCDIR)/openbsd-compat -lopenbsd-compat -L$(UDTSRCDIR) -ludt -lstdc++ -lpthread
+libopenssh.a:
+	$(MAKE) -C openssh
+	cp openssh/libopenssh.a .
+
+hscp: libudt.a libopenssh.a hscp.o udtscp.o
+	$(LD) -o $@ hscp.o udtscp.o -L. -Wl,-Bstatic -ludt  -lopenssh -Wl,-Bdynamic -lstdc++ -lpthread
+
+hscp.o: hscp.cpp hscp.h
+	$(CC) -c -I./udt4/src -I./openssh hscp.cpp
 
 udtscp.o: udtscp.cpp udtscp.h
-	$(CC) -g -c -I$(UDTSRCDIR) udtscp.cpp
+	$(CC) -c -I./udt4/src udtscp.cpp
 
 clean:
-	rm -f *.o hscp udtscp.o libudt.a
+	rm -f *.o hscp udtscp.o libudt.a libopenssh.a
 	$(MAKE) -C udt4 clean
+	$(MAKE) -C openssh clean
 
 install_bin:
 	cp -p hscp /usr/local/bin
