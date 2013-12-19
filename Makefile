@@ -28,22 +28,14 @@ clean:
 	$(MAKE) -C udt4 clean
 	$(MAKE) -C openssh clean
 
-install_bin:
-	cp -p hscp /usr/local/bin
-#	chown root:root /usr/local/bin/hscp
-#	chmod 755 /usr/local/bin/hscp
-#	cp -p hscp.conf /etc
-#	chown root:root /etc/hscp.conf
-#	chmod 644 /etc/hscp.conf
-
 install:
-	cp -p hscp /usr/local/bin
-	chown root:root /usr/local/bin/hscp
-	chmod 755 /usr/local/bin/hscp
-	cp -p hscp.conf /usr/local/etc
-	chown root:root /usr/local/etc/hscp.conf
-	chmod 644 /usr/local/etc/hscp.conf
+	mkdir -p $(DESTDIR)/usr/bin $(DESTDIR)/etc
+	cp -p hscp $(DESTDIR)/usr/bin
+	chown root:root $(DESTDIR)/usr/bin/hscp
+	cp -p hscp.conf $(DESTDIR)/etc
+	chown root:root $(DESTDIR)/etc/hscp.conf
+	chmod 644 $(DESTDIR)/etc/hscp.conf
 
 uninstall:
-	rm -f /usr/local/bin/hscp
-	rm -f /usr/local/etc/hscp.conf
+	rm -f $(DESTDIR)/usr/bin/hscp
+	rm -f $(DESTDIR)/etc/hscp.conf
