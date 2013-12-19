@@ -67,6 +67,7 @@ using namespace std;
 #include <stdlib.h>
 #include <time.h>
 #include <signal.h>
+#include <unistd.h>
 
 #define PORTMX 256
 #define SIN6_LEN

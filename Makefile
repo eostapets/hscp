@@ -31,9 +31,7 @@ clean:
 install:
 	mkdir -p $(DESTDIR)/usr/bin $(DESTDIR)/etc
 	cp -p hscp $(DESTDIR)/usr/bin
-	chown root:root $(DESTDIR)/usr/bin/hscp
 	cp -p hscp.conf $(DESTDIR)/etc
-	chown root:root $(DESTDIR)/etc/hscp.conf
 	chmod 644 $(DESTDIR)/etc/hscp.conf
 
 uninstall:
