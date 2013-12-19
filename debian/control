@@ -1,0 +1,16 @@
+Source: hscp
+Priority: extra
+Maintainer: Ievgen Ostapets <eostapets@gmail.com>
+Build-Depends: debhelper (>= 8.0.0)
+Standards-Version: 3.9.2
+Homepage: http://hscp.sf.net/
+
+Package: hscp
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: Hybrid scp
+ HSCP (Hybrid scp) is developing to transmit the large size file at 
+ high speed on the long distance and wideband infrastructure. It has 
+ achieved the fast transfer by changing the file transfer part of scp 
+ into the UDP(using UDT).
+
